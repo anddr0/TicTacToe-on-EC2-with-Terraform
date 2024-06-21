@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .cell:hover {
+            background-color: #e2e2e2;
+        }
+
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100px;
+            height: 100px;
+            font-size: 24px;
+            background-color: #fff;
+            border: 2px solid #ccc;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="text"] {
+            width: 200px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <form id="joinForm">
+        <input type="text" id="username" name="username" placeholder="Enter your name">
+        <button type="submit">Join Game</button>
+    </form>
+    <div id="board"></div>
+
+    <script>
+        const boardDiv = document.getElementById('board');
+        const joinForm = document.getElementById('joinForm');
+
+        let board = ['', '', '', '', '', '', '', '', '']; // Initialize empty board
+        let mark = "None";
+        let username = "";
+        let intervalId; // Store interval ID
+        const SERVER_ADDRESS = window.location.hostname;
+
+
+        async function joinGame(username) {
+            const response = await fetch('http://'+ SERVER_ADDRESS +':5000/join', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username })
+            });
+            const data = await response.json();
+            if (data.player_can_play) {
+                mark = data.player_mark;
+                joinForm.style.display = 'none';
+                renderBoard(data.board);
+                startPolling(); // Start polling for board updates
+            }
+        }
+
+        async function makeMove(position) {
+            if (board[position] === '') {
+                board[position] = mark;
+                renderBoard();
+                const data_to_send = {
+                    username: username,
+                    pos: position
+                };
+                const response = await fetch('http://'+ SERVER_ADDRESS +':5000/play', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ data_to_send }) 
+                });
+                const data = await response.json();
+                board = data.board; // Get board state from the server
+                renderBoard();
+                console.log(board);
+            }
+        }
+
+        function renderBoard() {
+            boardDiv.innerHTML = '';
+            board.forEach((mark, index) => {
+                const cell = document.createElement('div');
+                cell.textContent = mark;
+                cell.classList.add('cell');
+                cell.addEventListener('click', () => makeMove(index));
+                boardDiv.appendChild(cell);
+            });
+
+        }
+
+        function startPolling() {
+            intervalId = setInterval(fetchBoardState, 500); // Poll every 0.5 seconds
+        }
+
+        function arraysEqual(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            for (let i = 0; i < arr1.length; i++) {
+                if (arr1[i] !== arr2[i]) return false;
+            }
+            return true;
+        }
+
+        async function fetchBoardState() {
+            const response = await fetch('http://'+ SERVER_ADDRESS +':5000/board', {
+                method: 'GET',
+            });
+            const data = await response.json();
+            if (!arraysEqual(data.board, board)) {
+                board = data.board.slice();  // Kopiowanie zawartości tablicy
+                renderBoard();
+            }
+            if (data.winner) {
+                alert(`Player ${data.winner} wins!`);
+                clearInterval(intervalId); // Stop polling
+                boardDiv.style.display = 'none';
+            }
+        }
+
+        joinForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            username = document.getElementById('username').value;
+            joinGame(username);
+        });
+
+    </script>
+</body>
+</html>
