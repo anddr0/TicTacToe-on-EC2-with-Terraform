@@ -2,6 +2,10 @@
 
 This repository contains Terraform configurations and an example project for deploying an AWS instance along with a simple Tic-Tac-Toe application to demonstrate basic infrastructure provisioning using Terraform and Docker.
 
+![image](https://github.com/user-attachments/assets/b7a34187-c16a-4842-9579-1e65877d49fd)
+![image](https://github.com/user-attachments/assets/9d7ca6c0-dc4e-4598-b832-97e6286cc96c)
+![image](https://github.com/user-attachments/assets/fdca3bd1-f1d6-45f5-b829-ff1e5e136006)
+
 ## Project Overview
 
 The repository is divided into two main sections:
